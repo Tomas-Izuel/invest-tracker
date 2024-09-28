@@ -3,14 +3,17 @@ package main
 import (
 	"fmt"
 	"invest/config"
+	"invest/controllers"
+	"invest/services"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	const accountId = "66f4a80755c8e29142521d4b"
+	const accountId = "66f88a99cee86ff05e70a4ca"
 
 	// Carga las variables de entorno desde el archivo .env
 	err := godotenv.Load()
@@ -33,5 +36,16 @@ func main() {
 		log.Fatal("Error connecting to MongoDB: ", err)
 	}
 
-	print(client)
+	// Inicializa los servicios
+	stockService := services.NewStockService(client)
+
+	// Inicializa los controladores
+	stockController := controllers.NewStockController(stockService)
+
+	// Ruta para agregar una acción
+	http.HandleFunc("/add-stock", stockController.AddStock)
+
+	// Iniciar el servidor
+	log.Println("Server is running on port 8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

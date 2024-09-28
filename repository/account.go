@@ -43,13 +43,23 @@ func GetAccountByID(client *mongo.Client, id string) (models.Account, error) {
 }
 
 // UpdateAccount actualiza una cuenta existente
-func UpdateAccount(client *mongo.Client, id string, update bson.M) (*mongo.UpdateResult, error) {
+func UpdateAccount(client *mongo.Client, accountID string, stockID primitive.ObjectID) (*mongo.UpdateResult, error) {
 	collection := client.Database("investmentdb").Collection("accounts")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	objID, _ := primitive.ObjectIDFromHex(id)
-	result, err := collection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": update})
+	// Convertir el accountID a un ObjectID de MongoDB
+	accountObjectID, err := primitive.ObjectIDFromHex(accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Actualizar usando $push para agregar el nuevo stock al array de stocks
+	result, err := collection.UpdateOne(
+		ctx,
+		bson.M{"_id": accountObjectID}, // Filtro por el ID de la cuenta
+		bson.M{"$push": bson.M{"stocks": stockID}}, // Usa $push para agregar el stock al array de stocks
+	)
 	if err != nil {
 		return nil, err
 	}
