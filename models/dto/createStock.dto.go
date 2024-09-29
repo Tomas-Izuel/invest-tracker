@@ -5,4 +5,5 @@ type CreateStockDto struct {
 	Name      string `json:"name"`
 	IsBalanz  bool   `json:"is_balanz"`
 	Type      string `json:"type"`
+	Ammount   int    `json:"ammount"`
 }

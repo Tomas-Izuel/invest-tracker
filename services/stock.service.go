@@ -35,6 +35,7 @@ func (s *StockService) AddStockToAccount(accountID string, createStockData dto.C
 		IsBalanz:   createStockData.IsBalanz,
 		Name:       createStockData.Name,
 		Type:       createStockData.Type,
+		Ammount:    float64(createStockData.Ammount),
 		Quotations: []primitive.ObjectID{}, // Inicializa con un array vacío de ObjectIDs para las cotizaciones
 	}
 
@@ -49,6 +50,18 @@ func (s *StockService) AddStockToAccount(accountID string, createStockData dto.C
 	_, err = repository.UpdateAccount(s.Client, accountID, createdStock.InsertedID.(primitive.ObjectID))
 	if err != nil {
 		log.Println("Error updating account:", err)
+		return err
+	}
+
+	return nil
+}
+
+// ChangeStockQuantity cambia la cantidad de acciones de una acción existente
+func (s *StockService) ChangeStockQuantity(stockId string, changeStockData dto.UpdateStockDto) error {
+	// Cambiar la cantidad de acciones
+	_, err = repository.UpdateStock(s.Client, stockId, changeStockData)
+	if err != nil {
+		log.Println("Error updating stock:", err)
 		return err
 	}
 

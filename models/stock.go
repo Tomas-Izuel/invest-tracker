@@ -9,5 +9,6 @@ type Stock struct {
 	Name       string               `bson:"name"`                 // Nombre de la acción (ej. Standard & Poor's Depositary Receipts)
 	IsBalanz   bool                 `bson:"is_balanz,omitempty"`  // Indica si es una acción de Balanz
 	Type       string               `bson:"type,omitempty"`       // Tipo de acción (ej. ETF)
+	Ammount    float64              `bson:"ammount,omitempty"`    // Cantidad de acciones
 	Quotations []primitive.ObjectID `bson:"quotations,omitempty"` // Lista de IDs de cotizaciones
 }

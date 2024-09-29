@@ -42,3 +42,27 @@ func (sc *StockController) AddStock(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Stock added successfully"))
 }
+
+// Cambiar cantidad de acciones
+func (sc *StockController) ChangeStockQuantity(w http.ResponseWriter, r *http.Request) {
+	var requestBody dto.UpdateStockDto
+	stockID := r.URL.Query().Get("stockId")
+
+	// Decodificar el cuerpo de la solicitud
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Llamar al servicio para agregar la acción a la cuenta
+	err = sc.StockService.ChangeStockQuantity(stockID, requestBody)
+	if err != nil {
+		http.Error(w, "Error adding stock", http.StatusInternalServerError)
+		return
+	}
+
+	// Responder con un éxito
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte("Stock added successfully"))
+}
