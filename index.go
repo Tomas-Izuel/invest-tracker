@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"invest/config"
 	"log"
-	"net/http"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 )
 
@@ -29,7 +29,11 @@ func main() {
 	// Inicializa la conexión con MongoDB
 	config.InitializeDB(mongoURI, dbName)
 
-	// Iniciar el servidor
-	log.Println("Server is running on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	app := fiber.New()
+
+	app.Get("/test", func(c *fiber.Ctx) error {
+		return c.SendString("Hello, World!")
+	})
+
+	app.Listen(":3000")
 }
