@@ -21,24 +21,35 @@ func GetAllAcountsByUserID(ctx context.Context, userID string) ([]models.Account
 	return accounts, nil
 }
 
-func CreateAccount(ctx context.Context, accountDTO *dto.CreateAccountDTO) (*mongo.InsertOneResult, error) {
+func CreateAccount(ctx context.Context, id string, accountDTO *dto.CreateAccountDTO) (*mongo.InsertOneResult, error) {
 	if err := validate.Struct(accountDTO); err != nil {
 		return nil, errors.NewValidationError(lib.MapValidationErrors(err))
 	}
 
-	userID, err := primitive.ObjectIDFromHex(accountDTO.UserID)
-	if err != nil {
-		return nil, errors.Wrap(400, "invalid user ID format", err)
-	}
-
-	userExist, err := repository.FindUserByID(ctx, accountDTO.UserID)
+	userExist, err := repository.FindUserByID(ctx, id)
 	if err != nil || userExist == nil {
 		return nil, errors.Wrap(404, "user not found", err)
 	}
 
+	typeExists, err := repository.FindAccountTypeByID(ctx, accountDTO.TypeID)
+	if err != nil || typeExists == nil {
+		return nil, errors.Wrap(404, "account type not found", err)
+	}
+
+	userID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, errors.Wrap(400, "invalid user ID format", err)
+	}
+
+	typeID, err := primitive.ObjectIDFromHex(accountDTO.TypeID)
+	if err != nil {
+		return nil, errors.Wrap(400, "invalid account type ID format", err)
+	}
+
 	account := &models.Account{
 		UserID: userID,
-		Name:   accountDTO.Name,
+		Period: accountDTO.Period,
+		Type:   typeID,
 	}
 
 	user, err := repository.InsertAccount(ctx, account)
@@ -60,7 +71,7 @@ func UpdateAccount(ctx context.Context, id string, accountDTO *dto.UpdateAccount
 	}
 
 	updateData := map[string]interface{}{
-		"name": accountDTO.Name,
+		"period": accountDTO.Period,
 	}
 
 	userUpdated, err := repository.UpdateAccount(ctx, id, updateData)
