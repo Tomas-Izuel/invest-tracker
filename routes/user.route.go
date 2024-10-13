@@ -7,7 +7,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func UserSignUp(c *fiber.Ctx) error {
+func UsersRoutes(app fiber.Router) {
+	usersApi := app.Group("/users")
+
+	usersApi.Post("/signup", userSignUp)
+}
+
+func userSignUp(c *fiber.Ctx) error {
 	var userDTO dto.CreateUserDTO
 
 	if err := c.BodyParser(&userDTO); err != nil {

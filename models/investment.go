@@ -8,4 +8,5 @@ type Investment struct {
 	Code      string             `bson:"code"`
 	Stock     int                `bson:"stock"`
 	AccountID primitive.ObjectID `bson:"account_id"`
+	Prices    []InvestmentPrice  `bson:"prices,omitempty"` // Lista de precios (cotizaciones)
 }

@@ -15,6 +15,12 @@ func CreateUser(ctx context.Context, userDTO *dto.CreateUserDTO) error {
 		return errors.NewValidationError(lib.MapValidationErrors(err))
 	}
 
+	userExist, err := repository.FindUserByName(ctx, userDTO.Name)
+
+	if err != nil || userExist != nil {
+		return errors.Wrap(400, "user already exists", err)
+	}
+
 	user := &models.User{
 		Name: userDTO.Name,
 	}
