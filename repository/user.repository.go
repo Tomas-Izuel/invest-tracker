@@ -13,15 +13,15 @@ import (
 )
 
 // InsertUser inserts a new user into the MongoDB database
-func InsertUser(ctx context.Context, user *models.User) error {
+func InsertUser(ctx context.Context, user *models.User) (*mongo.InsertOneResult, error) {
 	collection := config.GetCollection("users")
 
-	_, err := collection.InsertOne(ctx, user)
+	created, err := collection.InsertOne(ctx, user)
 	if err != nil {
-		return errors.Wrap(500, "failed to insert user", err)
+		return nil, errors.Wrap(500, "failed to insert user", err)
 	}
 
-	return nil
+	return created, nil
 }
 
 // FindUserByID finds a user by their ID

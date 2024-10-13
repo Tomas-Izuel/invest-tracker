@@ -7,29 +7,33 @@ import (
 	"invest/models"
 	"invest/models/dto"
 	"invest/repository"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // CreateUser creates a new user using the provided DTO
-func CreateUser(ctx context.Context, userDTO *dto.CreateUserDTO) error {
+func CreateUser(ctx context.Context, userDTO *dto.CreateUserDTO) (*mongo.InsertOneResult, error) {
 	if err := validate.Struct(userDTO); err != nil {
-		return errors.NewValidationError(lib.MapValidationErrors(err))
+		return nil, errors.NewValidationError(lib.MapValidationErrors(err))
 	}
 
 	userExist, err := repository.FindUserByName(ctx, userDTO.Name)
 
 	if err != nil || userExist != nil {
-		return errors.Wrap(400, "user already exists", err)
+		return nil, errors.Wrap(400, "user already exists", err)
 	}
 
 	user := &models.User{
 		Name: userDTO.Name,
 	}
 
-	if err := repository.InsertUser(ctx, user); err != nil {
-		return errors.Wrap(500, "failed to create user", err)
+	created, err := repository.InsertUser(ctx, user)
+
+	if err != nil {
+		return nil, errors.Wrap(500, "failed to create user", err)
 	}
 
-	return nil
+	return created, nil
 }
 
 // GetUserByID retrieves a user by ID

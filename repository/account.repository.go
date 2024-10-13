@@ -12,15 +12,15 @@ import (
 )
 
 // InsertAccount inserts a new account into the database
-func InsertAccount(ctx context.Context, account *models.Account) error {
+func InsertAccount(ctx context.Context, account *models.Account) (*mongo.InsertOneResult, error) {
 	collection := config.GetCollection("accounts")
 
-	_, err := collection.InsertOne(ctx, account)
+	created, err := collection.InsertOne(ctx, account)
 	if err != nil {
-		return errors.Wrap(500, "failed to insert account", err)
+		return nil, errors.Wrap(500, "failed to insert account", err)
 	}
 
-	return nil
+	return created, nil
 }
 
 // FindAccountByID finds an account by its ID
@@ -74,23 +74,6 @@ func FindAccountByID(ctx context.Context, id string) (*models.Account, error) {
 	return &accounts[0], nil
 }
 
-// UpdateAccount updates an account's data
-func UpdateAccount(ctx context.Context, id string, updateData bson.M) error {
-	collection := config.GetCollection("accounts")
-
-	accountID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return errors.Wrap(400, "invalid account ID format", err)
-	}
-
-	_, err = collection.UpdateOne(ctx, bson.M{"_id": accountID}, bson.M{"$set": updateData})
-	if err != nil {
-		return errors.Wrap(500, "failed to update account", err)
-	}
-
-	return nil
-}
-
 // DeleteAccount deletes an account by its ID
 func DeleteAccount(ctx context.Context, id string) error {
 	collection := config.GetCollection("accounts")
@@ -108,6 +91,7 @@ func DeleteAccount(ctx context.Context, id string) error {
 	return nil
 }
 
+// GetAllAccountsByUserID returns all accounts related to a user
 func GetAllAccountsByUserID(ctx context.Context, userID string) ([]models.Account, error) {
 	collection := config.GetCollection("accounts")
 
@@ -139,4 +123,21 @@ func GetAllAccountsByUserID(ctx context.Context, userID string) ([]models.Accoun
 	}
 
 	return accounts, nil
+}
+
+// UpdateAccount updates an account's data
+func UpdateAccount(ctx context.Context, id string, updateData bson.M) (*mongo.UpdateResult, error) {
+	collection := config.GetCollection("accounts")
+
+	accountID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, errors.Wrap(400, "invalid account ID format", err)
+	}
+
+	updated, err := collection.UpdateOne(ctx, bson.M{"_id": accountID}, bson.M{"$set": updateData})
+	if err != nil {
+		return nil, errors.Wrap(500, "failed to update account", err)
+	}
+
+	return updated, nil
 }

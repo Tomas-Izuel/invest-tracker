@@ -22,7 +22,9 @@ func userSignUp(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := services.CreateUser(c.Context(), &userDTO); err != nil {
+	createdUser, err := services.CreateUser(c.Context(), &userDTO)
+
+	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": err.Error(),
 		})
@@ -30,5 +32,6 @@ func userSignUp(c *fiber.Ctx) error {
 
 	return c.Status(201).JSON(fiber.Map{
 		"message": "User created successfully",
+		"user":    createdUser,
 	})
 }

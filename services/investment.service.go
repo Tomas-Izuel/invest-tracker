@@ -10,16 +10,17 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func CreateInvestment(ctx context.Context, investmentDTO *dto.CreateInvestmentDTO) error {
+func CreateInvestment(ctx context.Context, investmentDTO *dto.CreateInvestmentDTO) (*mongo.InsertOneResult, error) {
 	if err := validate.Struct(investmentDTO); err != nil {
-		return errors.NewValidationError(lib.MapValidationErrors(err))
+		return nil, errors.NewValidationError(lib.MapValidationErrors(err))
 	}
 
 	accountExist, err := repository.FindAccountByID(ctx, investmentDTO.AccountID)
 	if err != nil || accountExist == nil {
-		return errors.Wrap(404, "account not found", err)
+		return nil, errors.Wrap(404, "account not found", err)
 	}
 
 	investment := &models.Investment{
@@ -29,21 +30,23 @@ func CreateInvestment(ctx context.Context, investmentDTO *dto.CreateInvestmentDT
 		Stock:     investmentDTO.Stock,
 	}
 
-	if err := repository.InsertInvestment(ctx, investment); err != nil {
-		return errors.Wrap(500, "failed to create investment", err)
+	created, err := repository.InsertInvestment(ctx, investment)
+
+	if err != nil {
+		return nil, errors.Wrap(500, "failed to create investment", err)
 	}
 
-	return nil
+	return created, nil
 }
 
-func UpdateInvestment(ctx context.Context, id string, investmentDTO *dto.UpdateInvestmentDTO) error {
+func UpdateInvestment(ctx context.Context, id string, investmentDTO *dto.UpdateInvestmentDTO) (*mongo.UpdateResult, error) {
 	if err := validate.Struct(investmentDTO); err != nil {
-		return errors.NewValidationError(lib.MapValidationErrors(err))
+		return nil, errors.NewValidationError(lib.MapValidationErrors(err))
 	}
 
 	investmentExist, err := repository.FindInvestmentByID(ctx, id)
 	if err != nil || investmentExist == nil {
-		return errors.Wrap(404, "investment not found", err)
+		return nil, errors.Wrap(404, "investment not found", err)
 	}
 
 	updateData := map[string]interface{}{
@@ -52,11 +55,13 @@ func UpdateInvestment(ctx context.Context, id string, investmentDTO *dto.UpdateI
 		"stock": investmentDTO.Stock,
 	}
 
-	if err := repository.UpdateInvestment(ctx, id, updateData); err != nil {
-		return errors.Wrap(500, "failed to update investment", err)
+	updated, err := repository.UpdateInvestment(ctx, id, updateData)
+
+	if err != nil {
+		return nil, errors.Wrap(500, "failed to update investment", err)
 	}
 
-	return nil
+	return updated, nil
 }
 
 func DeleteInvestment(ctx context.Context, id string) error {

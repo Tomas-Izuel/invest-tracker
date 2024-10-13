@@ -9,6 +9,7 @@ import (
 	"invest/repository"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func GetAllAcountsByUserID(ctx context.Context, userID string) ([]models.Account, error) {
@@ -20,19 +21,19 @@ func GetAllAcountsByUserID(ctx context.Context, userID string) ([]models.Account
 	return accounts, nil
 }
 
-func CreateAccount(ctx context.Context, accountDTO *dto.CreateAccountDTO) error {
+func CreateAccount(ctx context.Context, accountDTO *dto.CreateAccountDTO) (*mongo.InsertOneResult, error) {
 	if err := validate.Struct(accountDTO); err != nil {
-		return errors.NewValidationError(lib.MapValidationErrors(err))
+		return nil, errors.NewValidationError(lib.MapValidationErrors(err))
 	}
 
 	userID, err := primitive.ObjectIDFromHex(accountDTO.UserID)
 	if err != nil {
-		return errors.Wrap(400, "invalid user ID format", err)
+		return nil, errors.Wrap(400, "invalid user ID format", err)
 	}
 
 	userExist, err := repository.FindUserByID(ctx, accountDTO.UserID)
 	if err != nil || userExist == nil {
-		return errors.Wrap(404, "user not found", err)
+		return nil, errors.Wrap(404, "user not found", err)
 	}
 
 	account := &models.Account{
@@ -40,32 +41,34 @@ func CreateAccount(ctx context.Context, accountDTO *dto.CreateAccountDTO) error 
 		Name:   accountDTO.Name,
 	}
 
-	if err := repository.InsertAccount(ctx, account); err != nil {
-		return errors.Wrap(500, "failed to create account", err)
+	user, err := repository.InsertAccount(ctx, account)
+	if err != nil {
+		return nil, errors.Wrap(500, "failed to create account", err)
 	}
 
-	return nil
+	return user, nil
 }
 
-func UpdateAccount(ctx context.Context, id string, accountDTO *dto.UpdateAccountDTO) error {
+func UpdateAccount(ctx context.Context, id string, accountDTO *dto.UpdateAccountDTO) (*mongo.UpdateResult, error) {
 	if err := validate.Struct(accountDTO); err != nil {
-		return errors.NewValidationError(lib.MapValidationErrors(err))
+		return nil, errors.NewValidationError(lib.MapValidationErrors(err))
 	}
 
 	accountExist, err := repository.FindAccountByID(ctx, id)
 	if err != nil || accountExist == nil {
-		return errors.Wrap(404, "account not found", err)
+		return nil, errors.Wrap(404, "account not found", err)
 	}
 
 	updateData := map[string]interface{}{
 		"name": accountDTO.Name,
 	}
 
-	if err := repository.UpdateAccount(ctx, id, updateData); err != nil {
-		return errors.Wrap(500, "failed to update account", err)
+	userUpdated, err := repository.UpdateAccount(ctx, id, updateData)
+	if err != nil {
+		return nil, errors.Wrap(500, "failed to update account", err)
 	}
 
-	return nil
+	return userUpdated, nil
 }
 
 func DeleteAccount(ctx context.Context, id string) error {
