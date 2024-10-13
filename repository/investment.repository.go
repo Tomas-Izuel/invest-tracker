@@ -73,3 +73,24 @@ func DeleteInvestment(ctx context.Context, id string) error {
 
 	return nil
 }
+
+func GetAllInvestmentByAccountID(ctx context.Context, accountID string) ([]models.Investment, error) {
+	collection := config.GetCollection("investments")
+
+	accountObjectID, err := primitive.ObjectIDFromHex(accountID)
+	if err != nil {
+		return nil, errors.Wrap(400, "invalid account ID format", err)
+	}
+
+	cursor, err := collection.Find(ctx, bson.M{"account_id": accountObjectID})
+	if err != nil {
+		return nil, errors.Wrap(500, "failed to get investments", err)
+	}
+
+	var investments []models.Investment
+	if err = cursor.All(ctx, &investments); err != nil {
+		return nil, errors.Wrap(500, "failed to get investments", err)
+	}
+
+	return investments, nil
+}

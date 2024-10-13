@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"invest/config"
+	"invest/routes"
 	"log"
 	"os"
 
@@ -31,9 +32,7 @@ func main() {
 
 	app := fiber.New()
 
-	app.Get("/test", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
-	})
+	routes.RouteHandler(app)
 
-	app.Listen(":3000")
+	log.Fatal(app.Listen(":3000"))
 }
