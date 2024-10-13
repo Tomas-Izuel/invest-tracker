@@ -4,38 +4,50 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var MongoClient *mongo.Client
+var db *mongo.Database
+var client *mongo.Client
 
-// ConnectMongo establece la conexión con MongoDB
-func ConnectMongo(uri string) (*mongo.Client, error) {
-	clientOptions := options.Client().ApplyURI(uri)
+// InitializeDB initializes the MongoDB connection with the Stable API
+func InitializeDB(uri string, dbName string) {
+	// Set Server API options for Stable API
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// Apply URI and Server API options to client
+	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
 
-	client, err := mongo.Connect(ctx, clientOptions)
+	// Create a new client and connect to the server
+	var err error
+	client, err = mongo.Connect(context.TODO(), opts)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to MongoDB: %w", err)
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 
-	// Ping a la base de datos para asegurarse de que la conexión es correcta
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error pinging MongoDB: %w", err)
+	// Ping the server to confirm the connection
+	if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{"ping", 1}}).Err(); err != nil {
+		log.Fatalf("Failed to ping MongoDB: %v", err)
 	}
 
-	log.Println("Connected to MongoDB!")
-	MongoClient = client
-	return client, nil
+	// Set the database for further usage
+	db = client.Database(dbName)
+
+	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
 }
 
-// GetCollection obtiene una colección específica de MongoDB
-func GetCollection(client *mongo.Client, dbName, collName string) *mongo.Collection {
-	return client.Database(dbName).Collection(collName)
+// GetCollection returns a MongoDB collection by name
+func GetCollection(collectionName string) *mongo.Collection {
+	return db.Collection(collectionName)
+}
+
+// DisconnectDB disconnects the client from MongoDB
+func DisconnectDB() {
+	if err := client.Disconnect(context.TODO()); err != nil {
+		log.Fatalf("Failed to disconnect from MongoDB: %v", err)
+	}
+	fmt.Println("Disconnected from MongoDB")
 }
