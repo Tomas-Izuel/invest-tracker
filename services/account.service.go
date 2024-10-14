@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetAllAcountsByUserID(ctx context.Context, userID string) ([]models.Account, error) {
+func GetAllAcountsByUserID(ctx context.Context, userID string) ([]dto.AccountResponseDTO, error) {
 	accounts, err := repository.GetAllAccountsByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -97,6 +97,15 @@ func DeleteAccount(ctx context.Context, id string) error {
 
 func GetAccountByID(ctx context.Context, id string) (*models.Account, error) {
 	account, err := repository.FindAccountByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return account, nil
+}
+
+func GetAccountByUserID(ctx context.Context, userID string) ([]dto.AccountResponseDTO, error) {
+	account, err := repository.GetAllAccountsByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

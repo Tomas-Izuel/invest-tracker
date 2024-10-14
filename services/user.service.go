@@ -46,19 +46,19 @@ func GetUserByID(ctx context.Context, id string) (*models.User, error) {
 	return user, nil
 }
 
-func SignIn(ctx context.Context, signInDTO *dto.SignInDTO) error {
+func SignIn(ctx context.Context, signInDTO *dto.SignInDTO) (*models.User, error) {
 	if err := validate.Struct(signInDTO); err != nil {
-		return errors.NewValidationError(lib.MapValidationErrors(err))
+		return nil, errors.NewValidationError(lib.MapValidationErrors(err))
 	}
 
 	user, err := repository.FindUserByName(ctx, signInDTO.Name)
 	if err != nil {
-		return errors.Wrap(500, "failed to find user", err)
+		return nil, errors.Wrap(500, "failed to find user", err)
 	}
 
 	if user == nil {
-		return errors.ErrNotFound
+		return nil, errors.ErrNotFound
 	}
 
-	return nil
+	return user, nil
 }

@@ -13,9 +13,10 @@ func UsersRoutes(app fiber.Router) {
 	usersApi.Post("/signup", userSignUp)
 	usersApi.Post("/signin", userSignIn)
 
-	existUserApi := usersApi.Group("/{id}")
+	existUserApi := usersApi.Group("/:id")
 
 	existUserApi.Post("/add-account", addAccount)
+	existUserApi.Get("/accounts", getAccounts)
 }
 
 func userSignUp(c *fiber.Ctx) error {
@@ -50,7 +51,7 @@ func userSignIn(c *fiber.Ctx) error {
 		})
 	}
 
-	err := services.SignIn(c.Context(), &userDTO)
+	user, err := services.SignIn(c.Context(), &userDTO)
 
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -60,6 +61,7 @@ func userSignIn(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON(fiber.Map{
 		"message": "User signed in successfully",
+		"user":    user,
 	})
 }
 
@@ -86,4 +88,18 @@ func addAccount(c *fiber.Ctx) error {
 		"message": "Account created successfully",
 		"account": createdAccount,
 	})
+}
+
+func getAccounts(c *fiber.Ctx) error {
+	userId := c.Params("id")
+
+	accounts, err := services.GetAccountByUserID(c.Context(), userId)
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
+	return c.Status(200).JSON(accounts)
 }

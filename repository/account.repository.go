@@ -5,6 +5,7 @@ import (
 	"invest/config"
 	"invest/errors"
 	"invest/models"
+	"invest/models/dto"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -92,7 +93,7 @@ func DeleteAccount(ctx context.Context, id string) error {
 }
 
 // GetAllAccountsByUserID returns all accounts related to a user
-func GetAllAccountsByUserID(ctx context.Context, userID string) ([]models.Account, error) {
+func GetAllAccountsByUserID(ctx context.Context, userID string) ([]dto.AccountResponseDTO, error) {
 	collection := config.GetCollection("accounts")
 
 	userObjectID, err := primitive.ObjectIDFromHex(userID)
@@ -103,11 +104,27 @@ func GetAllAccountsByUserID(ctx context.Context, userID string) ([]models.Accoun
 	// Pipeline de agregación con $lookup para obtener las inversiones relacionadas
 	pipeline := mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"user_id", userObjectID}}}}, // Filtrar por user_id
+
+		// Primer lookup para relacionar el account_type
+		bson.D{{"$lookup", bson.D{
+			{"from", "account_type"},          // Colección de tipos de cuenta
+			{"localField", "account_type_id"}, // Cambiado a account_type_id (el campo que refiere a la colección account_type)
+			{"foreignField", "_id"},           // Campo en account_types que corresponde con el _id
+			{"as", "type"},                    // Resultado como "type"
+		}}},
+
+		// Usamos $unwind para descomponer el array "type" en un objeto
+		bson.D{{"$unwind", bson.D{
+			{"path", "$type"},                    // Desenrollamos el array "type"
+			{"preserveNullAndEmptyArrays", true}, // Preservar si no hay coincidencias
+		}}},
+
+		// Segundo lookup para obtener las inversiones relacionadas
 		bson.D{{"$lookup", bson.D{
 			{"from", "investments"},        // Colección de inversiones
-			{"localField", "_id"},          // Campo local (account._id)
-			{"foreignField", "account_id"}, // Campo de la inversión que se relaciona con account_id
-			{"as", "investments"},          // El resultado será una lista de investments en cada account
+			{"localField", "_id"},          // Campo local en accounts (por ejemplo, "_id")
+			{"foreignField", "account_id"}, // Campo en investments que referencia a la cuenta (por ejemplo, "account_id")
+			{"as", "investments"},          // Resultado como "investments"
 		}}},
 	}
 
@@ -117,7 +134,7 @@ func GetAllAccountsByUserID(ctx context.Context, userID string) ([]models.Accoun
 		return nil, errors.Wrap(500, "failed to aggregate accounts", err)
 	}
 
-	var accounts []models.Account
+	var accounts []dto.AccountResponseDTO
 	if err = cursor.All(ctx, &accounts); err != nil {
 		return nil, errors.Wrap(500, "failed to decode accounts", err)
 	}
@@ -146,23 +163,28 @@ func GetAllAccounts(ctx context.Context) ([]models.Account, error) {
 	collection := config.GetCollection("accounts")
 
 	pipeline := mongo.Pipeline{
-    // Primer lookup: Obtener el accountType
-    bson.D{{"$lookup", bson.D{
-        {"from", "account_types"},       // Colección de tipos de cuenta
-        {"localField", "type"},          // Campo en la colección accounts (por ejemplo, "type")
-        {"foreignField", "_id"},         // Campo en account_types que corresponde con el account "type"
-        {"as", "type"},                  // Resultado como "type"
-    }}},
+		// Primer lookup para relacionar el account_type
+		bson.D{{"$lookup", bson.D{
+			{"from", "account_type"},          // Colección de tipos de cuenta
+			{"localField", "account_type_id"}, // Cambiado a account_type_id (el campo que refiere a la colección account_type)
+			{"foreignField", "_id"},           // Campo en account_types que corresponde con el _id
+			{"as", "type"},                    // Resultado como "type"
+		}}},
 
-    // Segundo lookup: Obtener los investments
-    bson.D{{"$lookup", bson.D{
-        {"from", "investments"},         // Colección de inversiones
-        {"localField", "_id"},           // Campo local en accounts (por ejemplo, "_id")
-        {"foreignField", "account_id"},  // Campo en investments que referencia a la cuenta (por ejemplo, "account_id")
-        {"as", "investments"},           // Resultado como "investments"
-    }}},
-}
+		// Usamos $unwind para descomponer el array "type" en un objeto
+		bson.D{{"$unwind", bson.D{
+			{"path", "$type"},                    // Desenrollamos el array "type"
+			{"preserveNullAndEmptyArrays", true}, // Preservar si no hay coincidencias
+		}}},
 
+		// Segundo lookup: Obtener los investments
+		bson.D{{"$lookup", bson.D{
+			{"from", "investments"},        // Colección de inversiones
+			{"localField", "_id"},          // Campo local en accounts (por ejemplo, "_id")
+			{"foreignField", "account_id"}, // Campo en investments que referencia a la cuenta (por ejemplo, "account_id")
+			{"as", "investments"},          // Resultado como "investments"
+		}}},
+	}
 
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
@@ -173,7 +195,6 @@ func GetAllAccounts(ctx context.Context) ([]models.Account, error) {
 	if err = cursor.All(ctx, &accounts); err != nil {
 		return nil, errors.Wrap(500, "failed to decode accounts", err)
 	}
-
 
 	return accounts, nil
 }
