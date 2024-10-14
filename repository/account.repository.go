@@ -141,3 +141,29 @@ func UpdateAccount(ctx context.Context, id string, updateData bson.M) (*mongo.Up
 
 	return updated, nil
 }
+
+func GetAllAccounts(ctx context.Context) ([]models.Account, error) {
+	collection := config.GetCollection("accounts")
+
+	pipeline := mongo.Pipeline{
+		bson.D{{"$lookup", bson.D{
+			{"from", "account_types"},
+			{"localField", "type"},
+			{"foreignField", "_id"},
+			{"as", "type"},
+		}}},
+	}
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, errors.Wrap(500, "failed to aggregate accounts", err)
+	}
+
+	var accounts []models.Account
+	if err = cursor.All(ctx, &accounts); err != nil {
+		return nil, errors.Wrap(500, "failed to decode accounts", err)
+	}
+
+
+	return accounts, nil
+}

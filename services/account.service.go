@@ -103,3 +103,12 @@ func GetAccountByID(ctx context.Context, id string) (*models.Account, error) {
 
 	return account, nil
 }
+
+func GetAllAccounts(ctx context.Context) ([]models.Account, error) {
+	accounts, err := repository.GetAllAccounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return accounts, nil
+}
