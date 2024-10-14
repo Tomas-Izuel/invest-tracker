@@ -12,4 +12,5 @@ func RouteHandler(app *fiber.App) {
 	api.Get("/test", handler)
 
 	UsersRoutes(api)
+	AccountTypeRoutes(api)
 }

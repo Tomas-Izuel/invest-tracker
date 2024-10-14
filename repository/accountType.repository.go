@@ -5,6 +5,7 @@ import (
 	"invest/config"
 	"invest/errors"
 	"invest/models"
+	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -25,8 +26,9 @@ func InsertAccountType(ctx context.Context, accountType *models.AccountType) (*m
 func FindAccountTypes(ctx context.Context) ([]models.AccountType, error) {
 	collection := config.GetCollection("account_type")
 
-	cursor, err := collection.Find(ctx, nil)
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
+		log.Print(cursor)
 		return nil, errors.Wrap(500, "failed to get account types", err)
 	}
 
@@ -69,4 +71,16 @@ func UpdateAccountType(ctx context.Context, id string, accountType *models.Accou
 	}
 
 	return updated, nil
+}
+
+func FindAccountTypeByName(ctx context.Context, name string) (*models.AccountType, error) {
+	collection := config.GetCollection("account_type")
+
+	var accountType models.AccountType
+	err := collection.FindOne(ctx, bson.M{"name": name}).Decode(&accountType)
+	if err != nil {
+		return nil, errors.ErrNotFound
+	}
+
+	return &accountType, nil
 }
