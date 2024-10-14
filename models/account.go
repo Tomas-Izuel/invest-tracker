@@ -7,4 +7,5 @@ type Account struct {
 	Period string             `bson:"period"`
 	UserID primitive.ObjectID `bson:"user_id"`
 	Type   primitive.ObjectID `bson:"account_type_id"`
+	Prices []InvestmentPrice  `bson:"prices,omitempty"`
 }

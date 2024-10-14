@@ -146,13 +146,23 @@ func GetAllAccounts(ctx context.Context) ([]models.Account, error) {
 	collection := config.GetCollection("accounts")
 
 	pipeline := mongo.Pipeline{
-		bson.D{{"$lookup", bson.D{
-			{"from", "account_types"},
-			{"localField", "type"},
-			{"foreignField", "_id"},
-			{"as", "type"},
-		}}},
-	}
+    // Primer lookup: Obtener el accountType
+    bson.D{{"$lookup", bson.D{
+        {"from", "account_types"},       // Colección de tipos de cuenta
+        {"localField", "type"},          // Campo en la colección accounts (por ejemplo, "type")
+        {"foreignField", "_id"},         // Campo en account_types que corresponde con el account "type"
+        {"as", "type"},                  // Resultado como "type"
+    }}},
+
+    // Segundo lookup: Obtener los investments
+    bson.D{{"$lookup", bson.D{
+        {"from", "investments"},         // Colección de inversiones
+        {"localField", "_id"},           // Campo local en accounts (por ejemplo, "_id")
+        {"foreignField", "account_id"},  // Campo en investments que referencia a la cuenta (por ejemplo, "account_id")
+        {"as", "investments"},           // Resultado como "investments"
+    }}},
+}
+
 
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
