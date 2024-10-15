@@ -13,12 +13,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func CreateInvestment(ctx context.Context, investmentDTO *dto.CreateInvestmentDTO) (*mongo.InsertOneResult, error) {
+func CreateInvestment(ctx context.Context, id string, investmentDTO *dto.CreateInvestmentDTO) (*mongo.InsertOneResult, error) {
 	if err := validate.Struct(investmentDTO); err != nil {
 		return nil, errors.NewValidationError(lib.MapValidationErrors(err))
 	}
 
-	accountExist, err := repository.FindAccountByID(ctx, investmentDTO.AccountID)
+	accountExist, err := repository.FindAccountByID(ctx, id)
 	if err != nil || accountExist == nil {
 		return nil, errors.Wrap(404, "account not found", err)
 	}

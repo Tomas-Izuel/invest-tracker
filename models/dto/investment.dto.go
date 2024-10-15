@@ -1,10 +1,9 @@
 package dto
 
 type CreateInvestmentDTO struct {
-	Name      string `json:"name" validate:"required"`
-	Code      string `json:"code" validate:"required"`
-	Stock     int    `json:"stock" validate:"required"`
-	AccountID string `json:"account_id" validate:"required"` // Referencia a la cuenta
+	Name  string `json:"name" validate:"required"`
+	Code  string `json:"code" validate:"required"`
+	Stock int    `json:"stock" validate:"required"`
 }
 
 type UpdateInvestmentDTO struct {

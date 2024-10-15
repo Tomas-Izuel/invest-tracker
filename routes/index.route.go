@@ -13,4 +13,5 @@ func RouteHandler(app *fiber.App) {
 
 	UsersRoutes(api)
 	AccountTypeRoutes(api)
+	AccountRoutes(api)
 }
